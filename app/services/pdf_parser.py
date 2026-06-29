@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import re
 import logging
 from dataclasses import dataclass
@@ -15,14 +15,11 @@ class ParseError(Exception):
 @dataclass
 class RawTransaction:
     transaction_date: date
-    raw_description:  str
-    amount:           float
-    page_num:         int
+    raw_description: str
+    amount: float
+    page_num: int
 
-_DATE_FMTS = [
-    "%m/%d/%Y", "%m/%d/%y", "%Y-%m-%d",
-    "%d-%b-%Y", "%b %d, %Y", "%B %d, %Y", "%d/%m/%Y",
-]
+_DATE_FMTS = ["%m/%d/%Y","%m/%d/%y","%Y-%m-%d","%d-%b-%Y","%b %d, %Y","%B %d, %Y","%d/%m/%Y"]
 
 def _parse_date(raw: str) -> Optional[date]:
     for fmt in _DATE_FMTS:
@@ -33,9 +30,9 @@ def _parse_date(raw: str) -> Optional[date]:
     return None
 
 def _parse_amount(raw: str) -> Optional[float]:
-    s = raw.strip().replace(",", "").replace("$", "").replace("¥", "")
+    s = raw.strip().replace(",","").replace("$","").replace("Y","")
     negative = s.startswith("(") or s.upper().endswith("DR")
-    s = re.sub(r"[()CRDRcrdr]", "", s).strip("-").strip()
+    s = re.sub(r"[()CRDRcrdr]","",s).strip("-").strip()
     try:
         val = float(s)
         return -abs(val) if negative else val
@@ -43,12 +40,12 @@ def _parse_amount(raw: str) -> Optional[float]:
         return None
 
 _COL_MAP = {
-    r"(trans|posting|transaction)\s*(date|dt)": "date",
-    r"(date)": "date",
-    r"(description|memo|details|narration)": "desc",
-    r"(debit|withdrawal|charge)": "debit",
-    r"(credit|deposit|payment)": "credit",
-    r"(amount)": "amount",
+    r"(trans|posting|transaction)\s*(date|dt)":"date",
+    r"(date)":"date",
+    r"(description|memo|details|narration)":"desc",
+    r"(debit|withdrawal|charge)":"debit",
+    r"(credit|deposit|payment)":"credit",
+    r"(amount)":"amount",
 }
 
 def _map_headers(headers):
@@ -75,29 +72,29 @@ def _rows_from_table(table, page_num):
         if not row or all(c is None or str(c).strip() == "" for c in row):
             continue
         cells = [str(c).strip() if c is not None else "" for c in row]
-        date_idx = next((k for k, v in col_map.items() if v == "date"), None)
+        date_idx = next((k for k,v in col_map.items() if v=="date"),None)
         txn_date = _parse_date(cells[date_idx]) if date_idx is not None and date_idx < len(cells) else None
         if not txn_date:
             continue
-        desc_idx = next((k for k, v in col_map.items() if v == "desc"), None)
+        desc_idx = next((k for k,v in col_map.items() if v=="desc"),None)
         desc = cells[desc_idx] if desc_idx is not None and desc_idx < len(cells) else ""
         if not desc:
             continue
         amount = None
         if "debit" in col_map.values() and "credit" in col_map.values():
-            di = next(k for k, v in col_map.items() if v == "debit")
-            ci = next(k for k, v in col_map.items() if v == "credit")
+            di = next(k for k,v in col_map.items() if v=="debit")
+            ci = next(k for k,v in col_map.items() if v=="credit")
             dv = _parse_amount(cells[di]) if di < len(cells) else None
             cv = _parse_amount(cells[ci]) if ci < len(cells) else None
             if dv: amount = -abs(dv)
             elif cv: amount = abs(cv)
         else:
-            ai = next((k for k, v in col_map.items() if v == "amount"), None)
+            ai = next((k for k,v in col_map.items() if v=="amount"),None)
             if ai is not None and ai < len(cells):
                 amount = _parse_amount(cells[ai])
         if amount is None:
             continue
-        results.append(RawTransaction(transaction_date=txn_date, raw_description=desc, amount=amount, page_num=page_num))
+        results.append(RawTransaction(transaction_date=txn_date,raw_description=desc,amount=amount,page_num=page_num))
     return results
 
 _LINE_RE = re.compile(
@@ -137,10 +134,10 @@ def parse_pdf(path) -> list[RawTransaction]:
             if table_rows:
                 all_rows.extend(table_rows)
                 continue
-            text = page.extract_text(x_tolerance=3, y_tolerance=3) or ""
+            text = page.extract_text(x_tolerance=3,y_tolerance=3) or ""
             all_rows.extend(_rows_from_text(text, page_num))
     if not all_rows:
-        raise ParseError("Could not extract transactions. Please ensure this is a digital (not scanned) bank statement.")
+        raise ParseError("Could not extract transactions. Please ensure this is a digital bank statement.")
     seen = set()
     unique = []
     for row in all_rows:

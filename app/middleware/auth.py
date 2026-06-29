@@ -1,5 +1,4 @@
-from __future__ import annotations
-import os
+﻿from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -16,8 +15,8 @@ bearer_scheme = HTTPBearer(auto_error=False)
 class AuthContext:
     user_id: str
     firm_id: str
-    role:    str
-    email:   str
+    role: str
+    email: str
 
 def _decode_jwt(token: str) -> dict:
     try:
@@ -37,12 +36,12 @@ def _decode_jwt(token: str) -> dict:
 
 def _extract_auth(payload: dict) -> AuthContext:
     app_meta = payload.get("app_metadata") or {}
-    firm_id  = app_meta.get("firm_id")
-    role     = app_meta.get("firm_role", "member")
-    user_id  = payload.get("sub")
-    email    = payload.get("email", "")
+    firm_id = app_meta.get("firm_id")
+    role = app_meta.get("firm_role", "member")
+    user_id = payload.get("sub")
+    email = payload.get("email", "")
     if not firm_id:
-        raise HTTPException(status_code=403, detail="No firm associated. Please complete onboarding.")
+        raise HTTPException(status_code=403, detail="No firm associated.")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token.")
     return AuthContext(user_id=user_id, firm_id=firm_id, role=role, email=email)
