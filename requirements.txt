@@ -1,9 +1,11 @@
-fastapi==0.115.0
+﻿fastapi==0.115.0
 uvicorn[standard]==0.30.6
 python-multipart==0.0.9
 pdfplumber==0.11.4
 anthropic==0.34.2
 supabase==2.7.4
+gotrue==2.7.0
+postgrest==0.17.1
 openpyxl==3.1.5
 pandas==2.2.3
 python-dotenv==1.0.1

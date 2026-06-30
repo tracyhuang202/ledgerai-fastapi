@@ -1,7 +1,7 @@
 ﻿from __future__ import annotations
 import logging
 from fastapi import APIRouter, Depends, HTTPException
-from supabase import AsyncClient, create_async_client
+from supabase import create_async_client
 from app.core.config import get_settings
 from app.middleware.auth import AuthContext, require_auth
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 cfg = get_settings()
 
-async def get_supabase() -> AsyncClient:
+async def get_supabase():
     return await create_async_client(cfg.supabase_url, cfg.supabase_service_key)
 
 @router.get("/rules")
@@ -17,7 +17,7 @@ async def list_rules(
     include_public: bool = True,
     client_id: str = None,
     auth: AuthContext = Depends(require_auth),
-    supabase: AsyncClient = Depends(get_supabase),
+    supabase=Depends(get_supabase),
 ):
     firm_resp = await supabase.table("firm_vendor_categories").select("*").eq("firm_id", auth.firm_id).eq("is_active", True).execute()
     rules = [{"tier": "client" if r.get("client_id") else "firm", **r} for r in (firm_resp.data or [])]
@@ -35,7 +35,7 @@ async def list_rules(
 async def create_rule(
     body: dict,
     auth: AuthContext = Depends(require_auth),
-    supabase: AsyncClient = Depends(get_supabase),
+    supabase=Depends(get_supabase),
 ):
     resp = await supabase.table("firm_vendor_categories").insert({
         "firm_id": auth.firm_id,
@@ -55,7 +55,7 @@ async def create_rule(
 async def update_rule(
     rule_id: str, body: dict,
     auth: AuthContext = Depends(require_auth),
-    supabase: AsyncClient = Depends(get_supabase),
+    supabase=Depends(get_supabase),
 ):
     allowed = ["category_l1","category_l2","match_type","description","is_active","override_lower"]
     updates = {k: v for k, v in body.items() if k in allowed}
@@ -68,6 +68,6 @@ async def update_rule(
 async def delete_rule(
     rule_id: str,
     auth: AuthContext = Depends(require_auth),
-    supabase: AsyncClient = Depends(get_supabase),
+    supabase=Depends(get_supabase),
 ):
     await supabase.table("firm_vendor_categories").update({"is_active": False}).eq("id", rule_id).eq("firm_id", auth.firm_id).execute()
