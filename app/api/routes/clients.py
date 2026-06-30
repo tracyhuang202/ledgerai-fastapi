@@ -1,7 +1,7 @@
 ﻿from __future__ import annotations
 import logging
 from fastapi import APIRouter, Depends, HTTPException
-from supabase import create_async_client
+from supabase import acreate_client
 from app.core.config import get_settings
 from app.middleware.auth import AuthContext, require_auth
 
@@ -10,7 +10,7 @@ router = APIRouter()
 cfg = get_settings()
 
 async def get_supabase():
-    return await create_async_client(cfg.supabase_url, cfg.supabase_service_key)
+    return await acreate_client(cfg.supabase_url, cfg.supabase_service_key)
 
 @router.get("/clients")
 async def list_clients(

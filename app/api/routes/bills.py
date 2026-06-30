@@ -3,7 +3,7 @@ import asyncio, json, logging, tempfile, uuid
 from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from supabase import create_async_client
+from supabase import acreate_client
 import anthropic
 from app.core.config import get_settings
 from app.middleware.auth import AuthContext, require_auth
@@ -16,7 +16,7 @@ cfg = get_settings()
 _jobs: dict[str, dict] = {}
 
 async def get_supabase():
-    return await create_async_client(cfg.supabase_url, cfg.supabase_service_key)
+    return await acreate_client(cfg.supabase_url, cfg.supabase_service_key)
 
 async def get_llm():
     return anthropic.AsyncAnthropic(api_key=cfg.anthropic_api_key)
