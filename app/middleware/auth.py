@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 cfg = get_settings()
 bearer_scheme = HTTPBearer(auto_error=False)
 
-# Cache JWKS keys
 _jwks_cache: dict = {}
 
 async def _get_jwks() -> dict:
@@ -27,24 +26,29 @@ async def _get_jwks() -> dict:
     return _jwks_cache
 
 def _decode_jwt(token: str, jwks: dict) -> dict:
-    try:
-        # Try each key in JWKS
-        headers = jwt.get_unverified_header(token)
-        kid = headers.get("kid")
-        for key_data in jwks.get("keys", []):
-            if kid and key_data.get("kid") != kid:
-                continue
-            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key_data)
+    headers = jwt.get_unverified_header(token)
+    kid = headers.get("kid")
+    alg = headers.get("alg", "ES256")
+
+    for key_data in jwks.get("keys", []):
+        if kid and key_data.get("kid") != kid:
+            continue
+        try:
+            if alg in ("RS256", "RS384", "RS512"):
+                public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key_data)
+            else:
+                public_key = jwt.algorithms.ECAlgorithm.from_jwk(key_data)
             return jwt.decode(
                 token,
                 public_key,
-                algorithms=["RS256"],
+                algorithms=[alg],
                 options={"verify_aud": False},
             )
-    except Exception:
-        pass
+        except Exception as e:
+            logger.warning("JWKS key failed: %s", e)
+            continue
 
-    # Fallback: try Legacy JWT Secret (HS256)
+    # Fallback: Legacy JWT Secret (HS256)
     try:
         from jose import jwt as jose_jwt
         return jose_jwt.decode(
@@ -93,4 +97,3 @@ async def require_admin(auth: AuthContext = Depends(require_auth)) -> AuthContex
     if auth.role not in ("owner", "admin"):
         raise HTTPException(status_code=403, detail="Admin permission required.")
     return auth
-    
